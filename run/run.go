@@ -24,7 +24,7 @@ type Run struct {
 
 type Event struct {
 	State State       `json:"state"`
-	Value interface{} `json:"value"`
+	Value interface{} `json:"value,omitempty"`
 }
 
 type Runs struct {
@@ -71,4 +71,8 @@ func (r *Run) Error(err error) {
 
 func (r *Run) Success(value interface{}) {
 	r.events = append(r.events, &Event{SUCCESS, value})
+}
+
+func (r *Run) Id() uuid.UUID {
+	return r.id
 }
