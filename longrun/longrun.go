@@ -30,7 +30,7 @@ func (np *NextParams) FromPositional(params []interface{}) error {
 }
 
 type LongRun struct {
-	runs *run.Runs
+	Runs *run.Runs
 }
 
 func New() *LongRun {
@@ -49,7 +49,7 @@ func (lr *LongRun) Next(params json.RawMessage) (interface{}, *jrpc2.ErrorObject
 			Message: jrpc2.ErrorMsg("Not an UUID " + err.Error()),
 		}
 	}
-	events, err := lr.runs.Get(uid, p.N)
+	events, err := lr.Runs.Get(uid, p.N)
 	if err != nil {
 		return nil, &jrpc2.ErrorObject{
 			Code:    jrpc2.InternalErrorCode,

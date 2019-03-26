@@ -10,7 +10,7 @@ import (
 func TestLongrun(t *testing.T) {
 
 	lr := New()
-	run := lr.runs.New()
+	run := lr.Runs.New()
 
 	args, err := json.Marshal(map[string]interface{}{
 		"id": run.Id().String(),
