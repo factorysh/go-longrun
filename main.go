@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/bitwurx/jrpc2"
+	"github.com/factorysh/go-longrun/longrun"
 )
 
 // This struct is used for unmarshaling the method params
@@ -57,6 +58,8 @@ func main() {
 	// register the add method
 	s.Register("add", jrpc2.Method{Method: Add})
 
+	l := longrun.New()
+	s.Register("longrun.next", jrpc2.Method{Method: l.Next})
 	// register the subtract method to proxy another rpc server
 	// s.Register("add", jrpc2.Method{Url: "http://localhost:9999/api/v1/rpc"})
 
