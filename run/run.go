@@ -107,6 +107,6 @@ func (r *Run) Id() uuid.UUID {
 	return r.id
 }
 
-//func (r *Run) WaitFor() chan *Event {
-
-//}
+func (e *Event) Ended() bool {
+	return e.State == CANCELED || e.State == SUCCESS || e.State == ERROR
+}

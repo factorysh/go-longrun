@@ -31,9 +31,7 @@ func TestRun(t *testing.T) {
 			j, err := json.Marshal(evt)
 			assert.NoError(t, err)
 			fmt.Println(i, string(j))
-			if evt.State == CANCELED {
-				stop = true
-			}
+			stop = stop || evt.Ended()
 		}
 		if stop {
 			break
