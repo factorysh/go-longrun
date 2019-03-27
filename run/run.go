@@ -2,7 +2,9 @@ package run
 
 import (
 	"errors"
+	"fmt"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -18,8 +20,10 @@ const (
 )
 
 type Run struct {
-	events []*Event
-	id     uuid.UUID
+	events    []*Event
+	id        uuid.UUID
+	broadcast []func()
+	lock      sync.Mutex
 }
 
 type Event struct {
@@ -42,8 +46,10 @@ func (rr *Runs) New() *Run {
 	rr.sync.Lock()
 	defer rr.sync.Unlock()
 	r := &Run{
-		id:     uuid.New(),
-		events: []*Event{&Event{QUEUED, nil}},
+		id:        uuid.New(),
+		events:    []*Event{&Event{QUEUED, nil}},
+		broadcast: make([]func(), 0),
+		lock:      sync.Mutex{},
 	}
 	rr.run[r.id] = r
 	return r
@@ -54,25 +60,53 @@ func (rr *Runs) Get(id uuid.UUID, since int) ([]*Event, error) {
 	if !ok {
 		return nil, errors.New("Unknown run")
 	}
+	if len(r.events) <= since {
+		wait := make(chan interface{})
+		r.broadcast = append(r.broadcast, func() {
+			wait <- new(interface{})
+		})
+		select {
+		case <-wait:
+			fmt.Println("Wait")
+		case <-time.After(10 * time.Second):
+			fmt.Println("oups, timeout")
+		}
+
+	}
 	return r.events[since:], nil
 }
 
+func (r *Run) append(evt *Event) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	r.events = append(r.events, evt)
+	go func() {
+		for _, f := range r.broadcast {
+			f()
+		}
+	}()
+}
+
 func (r *Run) Run(value interface{}) {
-	r.events = append(r.events, &Event{RUNNING, value})
+	r.append(&Event{RUNNING, value})
 }
 
 func (r *Run) Cancel() {
-	r.events = append(r.events, &Event{CANCELED, nil})
+	r.append(&Event{CANCELED, nil})
 }
 
 func (r *Run) Error(err error) {
-	r.events = append(r.events, &Event{ERROR, err.Error()})
+	r.append(&Event{ERROR, err.Error()})
 }
 
 func (r *Run) Success(value interface{}) {
-	r.events = append(r.events, &Event{SUCCESS, value})
+	r.append(&Event{SUCCESS, value})
 }
 
 func (r *Run) Id() uuid.UUID {
 	return r.id
 }
+
+//func (r *Run) WaitFor() chan *Event {
+
+//}
