@@ -10,7 +10,7 @@ import (
 )
 
 func TestSubscribe(t *testing.T) {
-	runs := New()
+	runs := New(time.Hour)
 	run := runs.New()
 	c := run.Subscribe(0)
 	go func() {
@@ -30,7 +30,7 @@ func TestSubscribe(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	runs := New()
+	runs := New(time.Hour)
 	run := runs.New()
 	go func() {
 		time.Sleep(5 * time.Second)

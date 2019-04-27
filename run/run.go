@@ -20,6 +20,7 @@ const (
 )
 
 type Run struct {
+	runs      *Runs
 	events    []*Event
 	id        uuid.UUID
 	bid       int64
@@ -35,11 +36,13 @@ type Event struct {
 
 type Runs struct {
 	sync sync.Mutex
+	ttl  time.Duration
 	run  map[uuid.UUID]*Run
 }
 
-func New() *Runs {
+func New(ttl time.Duration) *Runs {
 	return &Runs{
+		ttl: ttl,
 		run: make(map[uuid.UUID]*Run),
 	}
 }
@@ -48,6 +51,7 @@ func (rr *Runs) New() *Run {
 	rr.sync.Lock()
 	defer rr.sync.Unlock()
 	r := &Run{
+		runs:      rr,
 		id:        uuid.New(),
 		events:    []*Event{&Event{QUEUED, nil}},
 		broadcast: make(map[int64]func()),
@@ -129,6 +133,10 @@ func (r *Run) append(evt *Event) {
 	for _, f := range r.broadcast {
 		go f()
 	}
+	go func() {
+		time.Sleep(r.runs.ttl)
+		delete(r.runs.run, r.id)
+	}()
 }
 
 func (r *Run) Run(value interface{}) {
