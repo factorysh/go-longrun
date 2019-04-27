@@ -9,6 +9,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSubscribe(t *testing.T) {
+	runs := New()
+	run := runs.New()
+	c := run.Subscribe(0)
+	go func() {
+		for {
+			evt := <-c
+			fmt.Println(evt)
+		}
+	}()
+
+	time.Sleep(5 * time.Second)
+	run.Run("hop")
+	run.Run("pim")
+	run.Run("pam")
+	run.Run("poum")
+	time.Sleep(2 * time.Second)
+	run.Cancel()
+}
+
 func TestRun(t *testing.T) {
 	runs := New()
 	run := runs.New()
