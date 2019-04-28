@@ -3,13 +3,14 @@ package longrun
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLongrun(t *testing.T) {
 
-	lr := New()
+	lr := New(5 * time.Minute)
 	run := lr.Runs.New()
 
 	args, err := json.Marshal(map[string]interface{}{

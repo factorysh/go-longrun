@@ -3,6 +3,7 @@ package longrun
 import (
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/factorysh/go-longrun/run"
 
@@ -33,8 +34,8 @@ type LongRun struct {
 	Runs *run.Runs
 }
 
-func New() *LongRun {
-	return &LongRun{run.New()}
+func New(ttl time.Duration) *LongRun {
+	return &LongRun{run.New(ttl)}
 }
 
 func (lr *LongRun) Next(params json.RawMessage) (interface{}, *jrpc2.ErrorObject) {
