@@ -2,7 +2,9 @@ package sse
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/factorysh/go-longrun/run"
@@ -27,13 +29,24 @@ func (s *SSE) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		return
 	}
+	leiRaw := r.Header.Get("Last-Event-ID")
+	lei := 0
+	var err error
+	if leiRaw != "" {
+		lei, err = strconv.Atoi(leiRaw)
+		if err != nil {
+			l.WithError(err).Error()
+			w.WriteHeader(400)
+			return
+		}
+	}
 	id, err := uuid.Parse(slugs[1])
 	if err != nil {
 		l.WithError(err).Error()
 		w.WriteHeader(400)
 		return
 	}
-	evts, err := s.runs.Subscribe(id, 0)
+	evts, err := s.runs.Subscribe(id, lei)
 	if err != nil {
 		// FIXME maybe some 404 if id doesn't exist
 		l.WithError(err).Error()
@@ -46,6 +59,7 @@ func (s *SSE) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.Set("Cache-Control", "no-cache")
 	h.Set("Connection", "keep-alive")
 	l.Info("Starting SSE")
+	cpt := 0
 	for {
 		evt := <-evts
 		j, err := json.Marshal(evt)
@@ -53,11 +67,13 @@ func (s *SSE) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			l.WithError(err).Error()
 			return
 		}
+		w.Write([]byte(fmt.Sprintf("id: %d\n", cpt)))
 		w.Write([]byte("data: "))
 		w.Write(j)
 		w.Write([]byte("\n\n"))
 		if evt.Ended() {
 			return
 		}
+		cpt++
 	}
 }

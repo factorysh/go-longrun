@@ -2,10 +2,7 @@ package sse
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
-	"io"
-	"strings"
 	"testing"
 	"time"
 
@@ -17,9 +14,7 @@ import (
 	"github.com/factorysh/go-longrun/run"
 )
 
-func TestSSE(t *testing.T) {
-	runs := run.New(5 * time.Minute)
-	r := runs.New()
+func fixture(r *run.Run) {
 	go func() {
 		time.Sleep(2 * time.Second)
 		r.Run("pim")
@@ -29,33 +24,34 @@ func TestSSE(t *testing.T) {
 		time.Sleep(2 * time.Second)
 		r.Success(new(interface{}))
 	}()
+}
+
+func TestSSE(t *testing.T) {
+	runs := run.New(5 * time.Minute)
+	r := runs.New()
+	fixture(r)
 	s := New(runs)
 	ts := httptest.NewServer(s)
 	defer ts.Close()
-	fmt.Println(r.Id())
 	res, err := http.Get(fmt.Sprintf("%s/%s", ts.URL, r.Id().String()))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)
 	reader := bufio.NewReader(res.Body)
 	defer res.Body.Close()
 	cpt := 0
-	for {
-		line, err := reader.ReadString('\n')
-		if err == io.EOF {
-			break
+	err = Reader(reader, func(evtRaw *Event) error {
+		fmt.Println(evtRaw)
+		var evt run.Event
+		err := evtRaw.JSON(&evt)
+		if err != nil {
+			return err
 		}
-		assert.NoError(t, err)
-		fmt.Print(line)
-		if strings.HasPrefix(line, "data: ") {
-			var evt run.Event
-			err = json.Unmarshal([]byte(line[6:]), &evt)
-			assert.NoError(t, err)
-			fmt.Println(evt)
-			assert.Equal(t, []run.State{run.QUEUED,
-				run.RUNNING, run.RUNNING, run.RUNNING,
-				run.SUCCESS}[cpt], evt.State)
-			cpt++
-		}
-	}
-
+		assert.Equal(t, []run.State{run.QUEUED,
+			run.RUNNING, run.RUNNING, run.RUNNING,
+			run.SUCCESS}[cpt], evt.State)
+		cpt++
+		return nil
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, 5, cpt)
 }
