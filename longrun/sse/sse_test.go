@@ -55,3 +55,27 @@ func TestSSE(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 5, cpt)
 }
+
+func TestLastEventId(t *testing.T) {
+	runs := run.New(5 * time.Minute)
+	r := runs.New()
+	fixture(r)
+	s := New(runs)
+	ts := httptest.NewServer(s)
+	defer ts.Close()
+	req, err := http.NewRequest("GET",
+		fmt.Sprintf("%s/%s", ts.URL, r.Id().String()), nil)
+	req.Header.Set("Last-Event-Id", "2")
+	res, err := http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.StatusCode)
+	reader := bufio.NewReader(res.Body)
+	defer res.Body.Close()
+	cpt := 0
+	err = Reader(reader, func(evtRaw *Event) error {
+		cpt++
+		return nil
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, 3, cpt)
+}
