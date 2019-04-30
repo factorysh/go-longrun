@@ -39,6 +39,7 @@ func (s *SSE) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(400)
 			return
 		}
+		lei++
 	}
 	id, err := uuid.Parse(slugs[1])
 	if err != nil {

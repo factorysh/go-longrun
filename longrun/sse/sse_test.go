@@ -77,5 +77,5 @@ func TestLastEventId(t *testing.T) {
 		return nil
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, 3, cpt)
+	assert.Equal(t, 2, cpt)
 }
