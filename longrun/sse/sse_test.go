@@ -71,11 +71,17 @@ func TestLastEventId(t *testing.T) {
 	assert.Equal(t, 200, res.StatusCode)
 	reader := bufio.NewReader(res.Body)
 	defer res.Body.Close()
-	cpt := 0
+	evts := make([]*run.Event, 0)
 	err = Reader(reader, func(evtRaw *Event) error {
-		cpt++
+		var e run.Event
+		err = evtRaw.JSON(&e)
+		assert.NoError(t, err)
+		evts = append(evts, &e)
 		return nil
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, 2, cpt)
+	assert.Len(t, evts, 2)
+	assert.Equal(t, "poum", evts[0].Value)
+	assert.Equal(t, run.SUCCESS, evts[1].State)
+
 }
