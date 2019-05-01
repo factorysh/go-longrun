@@ -17,6 +17,7 @@ type Run struct {
 	lock      sync.Mutex
 }
 
+// Subscribe run events, since this event id
 func (r *Run) Subscribe(since int) chan *Event {
 	c := make(chan *Event)
 	go func() {
@@ -49,6 +50,7 @@ func (r *Run) Subscribe(since int) chan *Event {
 	return c
 }
 
+// nextBid return broadcast id
 func (r *Run) nextBid() int64 {
 	r.block.Lock()
 	defer r.block.Unlock()
