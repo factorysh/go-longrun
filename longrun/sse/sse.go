@@ -67,10 +67,8 @@ func (s *SSE) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			l.WithError(err).Error()
 			return
 		}
-		w.Write([]byte(fmt.Sprintf("id: %d\n", lei)))
-		w.Write([]byte("data: "))
-		w.Write(j)
-		w.Write([]byte("\n\n"))
+		fmt.Fprintf(w, "id: %d\n", lei)
+		fmt.Fprintf(w, "data: %s\n\n", j)
 		if evt.Ended() {
 			return
 		}
