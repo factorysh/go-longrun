@@ -23,13 +23,19 @@ func (r *Run) Subscribe(since int) chan *Event {
 		cpt := 0
 		bid := r.nextBid()
 		for {
-			if since+cpt >= len(r.events) {
-				c := make(chan interface{})
-				r.broadcast[bid] = func() {
-					c <- new(interface{})
+			cc := make(chan interface{})
+			for {
+				if since+cpt >= len(r.events) {
+					if _, ok := r.broadcast[bid]; !ok {
+						r.broadcast[bid] = func() {
+							cc <- new(interface{})
+						}
+					}
+					<-cc
+				} else {
+					delete(r.broadcast, bid)
+					break
 				}
-				<-c
-				delete(r.broadcast, bid)
 			}
 			for _, evt := range r.events[since+cpt:] {
 				c <- evt

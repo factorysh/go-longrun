@@ -9,6 +9,7 @@ vendor:
 
 test: vendor
 	go test -v github.com/factorysh/go-longrun/longrun
+	go test -v github.com/factorysh/go-longrun/longrun/sse
 	go test -v github.com/factorysh/go-longrun/run
 
 clean:

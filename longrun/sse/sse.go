@@ -60,7 +60,6 @@ func (s *SSE) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.Set("Cache-Control", "no-cache")
 	h.Set("Connection", "keep-alive")
 	l.Info("Starting SSE")
-	cpt := 0
 	for {
 		evt := <-evts
 		j, err := json.Marshal(evt)
@@ -68,13 +67,13 @@ func (s *SSE) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			l.WithError(err).Error()
 			return
 		}
-		w.Write([]byte(fmt.Sprintf("id: %d\n", cpt)))
+		w.Write([]byte(fmt.Sprintf("id: %d\n", lei)))
 		w.Write([]byte("data: "))
 		w.Write(j)
 		w.Write([]byte("\n\n"))
 		if evt.Ended() {
 			return
 		}
-		cpt++
+		lei++
 	}
 }
