@@ -22,6 +22,30 @@ func New(r *run.Runs) *SSE {
 	}
 }
 
+func (s *SSE) ServeRun(w http.ResponseWriter, l *log.Entry, _run *run.Run, lei int) {
+	evts := _run.Subscribe(lei)
+	h := w.Header()
+	h.Set("Content-Type", "text/event-stream")
+	h.Set("Cache-Control", "no-cache")
+	h.Set("Connection", "keep-alive")
+	l.Info("Starting SSE")
+	for {
+		evt := <-evts
+		j, err := json.Marshal(evt)
+		if err != nil {
+			l.WithError(err).Error()
+			return
+		}
+		fmt.Fprintf(w, "id: %d\n", lei)
+		fmt.Fprintf(w, "data: %s\n\n", j)
+		if evt.Ended() {
+			return
+		}
+		lei++
+	}
+
+}
+
 func (s *SSE) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	l := log.WithField("url", r.URL.String())
 	slugs := strings.Split(r.URL.Path, "/")
@@ -47,31 +71,10 @@ func (s *SSE) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		return
 	}
-	evts, err := s.runs.Subscribe(id, lei)
-	if err != nil {
-		// FIXME maybe some 404 if id doesn't exist
-		l.WithError(err).Error()
-		w.WriteHeader(400)
+	_run, ok := s.runs.GetRun(id)
+	if !ok {
+		w.WriteHeader(404)
 		return
 	}
-
-	h := w.Header()
-	h.Set("Content-Type", "text/event-stream")
-	h.Set("Cache-Control", "no-cache")
-	h.Set("Connection", "keep-alive")
-	l.Info("Starting SSE")
-	for {
-		evt := <-evts
-		j, err := json.Marshal(evt)
-		if err != nil {
-			l.WithError(err).Error()
-			return
-		}
-		fmt.Fprintf(w, "id: %d\n", lei)
-		fmt.Fprintf(w, "data: %s\n\n", j)
-		if evt.Ended() {
-			return
-		}
-		lei++
-	}
+	s.ServeRun(w, l, _run, lei)
 }

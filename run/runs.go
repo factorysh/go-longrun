@@ -36,6 +36,11 @@ func (rr *Runs) New() *Run {
 	return r
 }
 
+func (rr *Runs) GetRun(id uuid.UUID) (*Run, bool) {
+	r, ok := rr.run[id]
+	return r, ok
+}
+
 func (rr *Runs) Get(id uuid.UUID, since int) ([]*Event, error) {
 	r, ok := rr.run[id]
 	if !ok {
