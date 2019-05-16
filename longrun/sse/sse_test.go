@@ -36,10 +36,9 @@ func TestSSE(t *testing.T) {
 	res, err := http.Get(fmt.Sprintf("%s/%s", ts.URL, r.Id().String()))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, res.StatusCode)
-	reader := bufio.NewReader(res.Body)
 	defer res.Body.Close()
 	cpt := 0
-	err = Reader(reader, func(evtRaw *Event) error {
+	err = Reader(res.Body, func(evtRaw *Event) error {
 		fmt.Println(evtRaw)
 		var evt run.Event
 		err := evtRaw.JSON(&evt)

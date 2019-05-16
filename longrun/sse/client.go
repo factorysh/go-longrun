@@ -19,18 +19,12 @@ func (e *Event) JSON(v interface{}) error {
 }
 
 func Reader(r io.Reader, visitor func(*Event) error) error {
-	reader := bufio.NewReader(r)
+	scanner := bufio.NewScanner(r)
 	evt := &Event{}
-	for {
-		line, err := reader.ReadString('\n')
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-		if line == "\n" {
-			err = visitor(evt)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			err := visitor(evt)
 			if err != nil {
 				return err
 			}
@@ -44,10 +38,10 @@ func Reader(r io.Reader, visitor func(*Event) error) error {
 		case 1:
 			event(evt, parts[0], "")
 		case 2:
-			event(evt, parts[0], parts[1][:len(parts[1])-1])
+			event(evt, parts[0], parts[1][:len(parts[1])])
 		}
 	}
-	return nil
+	return scanner.Err()
 }
 
 func event(evt *Event, key, value string) {
