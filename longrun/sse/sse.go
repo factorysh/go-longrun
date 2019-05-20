@@ -28,6 +28,7 @@ func (s *SSE) ServeRun(w http.ResponseWriter, l *log.Entry, _run *run.Run, lei i
 	h.Set("Content-Type", "text/event-stream")
 	h.Set("Cache-Control", "no-cache")
 	h.Set("Connection", "keep-alive")
+	h.Set("X-Longrun-ID", _run.Id().String())
 	l.Info("Starting SSE")
 	for {
 		evt := <-evts
