@@ -37,14 +37,12 @@ func (s *SSE) ServeRun(w http.ResponseWriter, l *log.Entry, _run *run.Run, lei i
 			l.WithError(err).Error()
 			return
 		}
-		fmt.Fprintf(w, "id: %d\n", lei)
-		fmt.Fprintf(w, "data: %s\n\n", j)
+		fmt.Fprintf(w, "id: %d\ndata: %s\n\n", lei, j)
 		if evt.Ended() {
 			return
 		}
 		lei++
 	}
-
 }
 
 func (s *SSE) ServeHTTP(w http.ResponseWriter, r *http.Request) {
