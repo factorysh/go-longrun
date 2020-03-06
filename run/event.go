@@ -15,6 +15,12 @@ type Event struct {
 	Value interface{} `json:"value,omitempty"`
 }
 
+type LongEvent struct {
+	Id    int         `json:"id"`
+	State State       `json:"state"`
+	Value interface{} `json:"value,omitempty"`
+}
+
 func (e *Event) Ended() bool {
 	return e.State == CANCELED || e.State == SUCCESS || e.State == ERROR
 }

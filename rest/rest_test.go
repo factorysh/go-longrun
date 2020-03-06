@@ -63,4 +63,17 @@ func TestUrl(t *testing.T) {
 	fmt.Println("Body: ", string(body))
 	assert.Equal(t, 303, resp.StatusCode)
 	assert.Equal(t, "/user/"+rjson["id"], resp.Header.Get("location"))
+	r, _ = h.runs.GetRun(uuid.MustParse(rjson["id"]))
+	r.Run(true)
+	r.Success("ok")
+	resp, err = client.Get(server.URL + "/user/" + rjson["id"])
+	assert.NoError(t, err)
+	body, err = ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	fmt.Println(string(body))
+	var events []run.LongEvent
+	err = json.Unmarshal(body, &events)
+	assert.NoError(t, err)
+	assert.Len(t, events, 3)
+
 }

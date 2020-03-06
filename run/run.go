@@ -50,6 +50,10 @@ func (r *Run) Subscribe(since int) chan *Event {
 	return c
 }
 
+func (r *Run) Events(since int) []*Event {
+	return r.events[since:]
+}
+
 // nextBid return broadcast id
 func (r *Run) nextBid() int64 {
 	r.block.Lock()
