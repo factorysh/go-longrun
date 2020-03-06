@@ -14,6 +14,7 @@ import (
 
 type Handler struct {
 	runs *run.Runs
+	root string
 }
 
 func getId(root, path string) (uuid.UUID, error) {
@@ -26,7 +27,17 @@ func getId(root, path string) (uuid.UUID, error) {
 func (h *Handler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case http.MethodHead:
-		resp.WriteHeader(200)
+		id, err := getId(h.root, req.RequestURI)
+		if err != nil {
+			resp.WriteHeader(500)
+			return
+		}
+		_, ok := h.runs.GetRun(id)
+		if ok {
+			resp.WriteHeader(200)
+		} else {
+			resp.WriteHeader(404)
+		}
 	case http.MethodPost:
 		b, err := ioutil.ReadAll(req.Body)
 		raw := new(json.RawMessage)
