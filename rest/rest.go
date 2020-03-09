@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/factorysh/go-longrun/longrun/sse"
 	"github.com/factorysh/go-longrun/run"
+	"github.com/factorysh/go-longrun/sse"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
