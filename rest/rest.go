@@ -10,8 +10,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/factorysh/go-longrun/longrun/sse"
 	"github.com/factorysh/go-longrun/run"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
 type Handler struct {
@@ -89,14 +91,17 @@ func (h *Handler) post(resp http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (h *Handler) get(resp http.ResponseWriter, req *http.Request) {
+func (h *Handler) get(l *log.Entry, resp http.ResponseWriter, req *http.Request) {
 	id, err := getId(h.root, req.RequestURI)
 	if err != nil {
+		l.WithError(err).Error()
 		resp.WriteHeader(400)
 		return
 	}
+	l = l.WithField("id", id.String())
 	run, ok := h.runs.GetRun(id)
 	if !ok {
+		l.WithError(err).Error()
 		resp.WriteHeader(404)
 		return
 	}
@@ -108,13 +113,14 @@ func (h *Handler) get(resp http.ResponseWriter, req *http.Request) {
 	if lei != "" {
 		since, err = strconv.Atoi(lei)
 		if err != nil {
+			l.WithError(err).Error()
 			resp.WriteHeader(400)
 			return
 		}
 	}
+	l = l.WithField("since", since)
 	if parseAcceptContains(req.Header.Get("accept"), "text/event-stream") {
-		resp.Header().Set("content-type", "text/event-stream")
-		resp.WriteHeader(200)
+		sse.ServeRun(resp, l, run, since)
 	} else {
 		resp.Header().Set("content-type", "application/json")
 		resp.WriteHeader(200)
@@ -133,16 +139,18 @@ func (h *Handler) get(resp http.ResponseWriter, req *http.Request) {
 		}
 		resp.Write([]byte(`]`))
 	}
+	l.Info()
 }
 
 func (h *Handler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	l := log.WithField("url", req.URL)
 	switch req.Method {
 	case http.MethodHead:
 		h.head(resp, req)
 	case http.MethodPost:
 		h.post(resp, req)
 	case http.MethodGet:
-		h.get(resp, req)
+		h.get(l, resp, req)
 	default:
 		resp.WriteHeader(http.StatusMethodNotAllowed)
 	}

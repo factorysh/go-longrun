@@ -22,9 +22,10 @@ func New(r *run.Runs) *SSE {
 	}
 }
 
-func (s *SSE) ServeRun(w http.ResponseWriter, l *log.Entry, _run *run.Run, lei int) {
+func ServeRun(w http.ResponseWriter, l *log.Entry, _run *run.Run, lei int) {
 	evts := _run.Subscribe(lei)
 	h := w.Header()
+	// https://html.spec.whatwg.org/multipage/server-sent-events.html
 	h.Set("Content-Type", "text/event-stream")
 	h.Set("Cache-Control", "no-cache")
 	h.Set("Connection", "keep-alive")
@@ -32,12 +33,12 @@ func (s *SSE) ServeRun(w http.ResponseWriter, l *log.Entry, _run *run.Run, lei i
 	l.Info("Starting SSE")
 	for {
 		evt := <-evts
-		j, err := json.Marshal(evt)
+		j, err := json.Marshal(evt.Value)
 		if err != nil {
 			l.WithError(err).Error()
 			return
 		}
-		fmt.Fprintf(w, "id: %d\ndata: %s\n\n", lei, j)
+		fmt.Fprintf(w, "event: %s\nid: %d\ndata: %s\n\n", evt.State, lei, j)
 		if evt.Ended() {
 			return
 		}
@@ -75,5 +76,5 @@ func (s *SSE) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(404)
 		return
 	}
-	s.ServeRun(w, l, _run, lei)
+	ServeRun(w, l, _run, lei)
 }
