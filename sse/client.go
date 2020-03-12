@@ -9,14 +9,6 @@ import (
 	"time"
 )
 
-type Event struct {
-	dataExists bool
-	Data       string
-	Id         string
-	Event      string
-	Retry      time.Duration
-}
-
 type SSEReader struct {
 	scanner *bufio.Scanner
 }

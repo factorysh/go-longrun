@@ -80,3 +80,9 @@ func (e *Events) Close() {
 		s.done <- new(interface{})
 	}
 }
+
+func (e *Events) Id() int {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	return len(e.events)
+}
