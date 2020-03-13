@@ -8,20 +8,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type SSE struct {
-	Events *Events
-}
-
-func New() *SSE {
-	return &SSE{
-		Events: NewEvents(),
-	}
-}
-
-func (s *SSE) HandleSSE(ctx context.Context, w http.ResponseWriter, l *log.Entry, lei int) {
+func HandleSSE(ctx context.Context, e *Events, w http.ResponseWriter, l *log.Entry, lei int) {
 	ctx2, cancel := context.WithCancel(context.TODO())
 	defer cancel()
-	evts := s.Events.Subscribe(ctx2, lei)
+	evts := e.Subscribe(ctx2, lei)
 	h := w.Header()
 	// https://html.spec.whatwg.org/multipage/server-sent-events.html
 	h.Set("Content-Type", "text/event-stream")

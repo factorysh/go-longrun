@@ -33,6 +33,12 @@ func (e *Events) nextBid() int64 {
 	return e.bid
 }
 
+func (e *Events) Since(since int) []*Event {
+	e.lock.Lock()
+	defer e.lock.Unlock()
+	return e.events[since:]
+}
+
 func (e *Events) Subscribe(ctx context.Context, since int) chan *Event {
 	s := &subscriber{
 		events: make(chan *Event, 100),
@@ -81,7 +87,7 @@ func (e *Events) Close() {
 	}
 }
 
-func (e *Events) Id() int {
+func (e *Events) Size() int {
 	e.lock.RLock()
 	defer e.lock.RUnlock()
 	return len(e.events)
