@@ -13,24 +13,27 @@ func TestRun(t *testing.T) {
 	ctx := context.TODO()
 	run := runs.NewRun(ctx)
 	go func() {
-		time.Sleep(5 * time.Second)
+		time.Sleep(500 * time.Millisecond)
 		run.Run("hop")
 		run.Run("pim")
 		run.Run("pam")
 		run.Run("poum")
-		time.Sleep(2 * time.Second)
+		time.Sleep(200 * time.Millisecond)
 		run.Cancel()
 	}()
 	i := 0
 	for {
 		r, ok := runs.GetRun(run.id)
 		assert.True(t, ok)
-		i += r.Events.Size()
-		stop := false
-		evts := r.Events.Since(0)
-		stop = stop || evts[len(evts)-1].Event == "canceled"
-		if stop {
+		evts, err := r.Since(i)
+		if len(evts) == 0 {
+			continue
+		}
+		i += len(evts)
+		assert.NoError(t, err)
+		if evts[len(evts)-1].Ended() {
 			break
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 }
