@@ -2,6 +2,7 @@ package rest
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -120,12 +121,19 @@ func (h *Handler) get(l *log.Entry, resp http.ResponseWriter, req *http.Request)
 	}
 	l = l.WithField("since", since)
 	if parseAcceptContains(req.Header.Get("accept"), "text/event-stream") {
-		sse.ServeRun(resp, l, run, since)
+		ctx, cancel := context.WithCancel(context.TODO())
+		defer cancel()
+		go sse.HandleSSE(ctx, run.Events, resp, l, since)
 	} else {
+		events, err := run.Since(since)
+		if err != nil {
+			l.WithError(err).Error()
+			resp.WriteHeader(500)
+			return
+		}
 		resp.Header().Set("content-type", "application/json")
 		resp.WriteHeader(200)
 		resp.Write([]byte(`[`))
-		events := run.Events(since)
 		for i, event := range events {
 			v, err := json.Marshal(event.Value)
 			if err != nil {

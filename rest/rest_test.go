@@ -2,15 +2,18 @@ package rest
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"testing"
 	"time"
 
 	"net/http"
 	"net/http/httptest"
 
+	_client "github.com/factorysh/go-longrun/client"
 	"github.com/factorysh/go-longrun/run"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -76,4 +79,40 @@ func TestUrl(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, events, 3)
 
+}
+
+func TestClient(t *testing.T) {
+	mux := http.NewServeMux()
+	h := &Handler{
+		runs: run.New(30 * time.Second),
+		root: "/user",
+	}
+	mux.Handle("/user/", h)
+	server := httptest.NewServer(mux)
+	client := server.Client()
+
+	req, err := http.NewRequest("POST", server.URL+"/user/", bytes.NewBuffer([]byte(`{"name": "Charly"}`)))
+	assert.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("accept", "text/event-stream")
+	resp, err := client.Do(req)
+	assert.NoError(t, err)
+	fmt.Println(resp.Request.URL)
+	slugs := strings.Split(resp.Request.URL.Path, "/")
+	r, _ := h.runs.GetRun(uuid.MustParse(slugs[2]))
+	events, err := _client.Longrun(context.TODO(), resp)
+	assert.NoError(t, err)
+	fmt.Println(events)
+	go func() {
+		r.Run("beuha")
+		time.Sleep(1 * time.Second)
+		r.Success(nil)
+	}()
+	/*
+		for {
+			event := <-events
+			fmt.Println(event)
+		}
+	*/
+	assert.True(t, false)
 }
