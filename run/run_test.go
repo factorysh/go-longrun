@@ -1,37 +1,17 @@
 package run
 
 import (
-	"encoding/json"
-	"fmt"
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSubscribe(t *testing.T) {
-	runs := New(time.Hour)
-	run := runs.New()
-	c := run.Subscribe(0)
-	go func() {
-		for {
-			evt := <-c
-			fmt.Println(evt)
-		}
-	}()
-
-	time.Sleep(5 * time.Second)
-	run.Run("hop")
-	run.Run("pim")
-	run.Run("pam")
-	run.Run("poum")
-	time.Sleep(2 * time.Second)
-	run.Cancel()
-}
-
 func TestRun(t *testing.T) {
 	runs := New(time.Hour)
-	run := runs.New()
+	ctx := context.TODO()
+	run := runs.NewRun(ctx)
 	go func() {
 		time.Sleep(5 * time.Second)
 		run.Run("hop")
@@ -43,16 +23,12 @@ func TestRun(t *testing.T) {
 	}()
 	i := 0
 	for {
-		evts, err := runs.Get(run.id, i)
-		assert.NoError(t, err)
-		i += len(evts)
+		r, ok := runs.GetRun(run.id)
+		assert.True(t, ok)
+		i += r.Events.Size()
 		stop := false
-		for _, evt := range evts {
-			j, err := json.Marshal(evt)
-			assert.NoError(t, err)
-			fmt.Println(i, string(j))
-			stop = stop || evt.Ended()
-		}
+		evts := r.Events.Since(0)
+		stop = stop || evts[len(evts)-1].Event == "canceled"
 		if stop {
 			break
 		}

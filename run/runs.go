@@ -1,11 +1,11 @@
 package run
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"sync"
 	"time"
 
+	"github.com/factorysh/go-longrun/sse"
 	"github.com/google/uuid"
 )
 
@@ -22,16 +22,18 @@ func New(ttl time.Duration) *Runs {
 	}
 }
 
-func (rr *Runs) New() *Run {
+func (rr *Runs) NewRun(ctx context.Context) *Run {
 	rr.sync.Lock()
 	defer rr.sync.Unlock()
 	r := &Run{
-		runs:      rr,
-		id:        uuid.New(),
-		events:    []*Event{&Event{QUEUED, nil}},
-		broadcast: make(map[int64]func()),
-		lock:      sync.Mutex{},
+		runs:   rr,
+		id:     uuid.New(),
+		Events: sse.NewEvents(),
 	}
+	r.Events.Append(&sse.Event{
+		Event: string(QUEUED),
+		Data:  "null",
+	})
 	rr.run[r.id] = r
 	return r
 }
@@ -39,36 +41,4 @@ func (rr *Runs) New() *Run {
 func (rr *Runs) GetRun(id uuid.UUID) (*Run, bool) {
 	r, ok := rr.run[id]
 	return r, ok
-}
-
-func (rr *Runs) Get(id uuid.UUID, since int) ([]*Event, error) {
-	r, ok := rr.run[id]
-	if !ok {
-		return nil, errors.New("Unknown run")
-	}
-	if len(r.events) <= since {
-		wait := make(chan interface{})
-		// FIXME forever growing array
-		bid := r.nextBid()
-		r.broadcast[bid] = func() {
-			wait <- new(interface{})
-		}
-		defer delete(r.broadcast, bid)
-		select {
-		case <-wait:
-			fmt.Println("Wait")
-		case <-time.After(10 * time.Second):
-			fmt.Println("oups, timeout")
-		}
-
-	}
-	return r.events[since:], nil
-}
-
-func (rr *Runs) Subscribe(id uuid.UUID, since int) (chan *Event, error) {
-	r, ok := rr.run[id]
-	if !ok {
-		return nil, errors.New("Unknown run")
-	}
-	return r.Subscribe(since), nil
 }
