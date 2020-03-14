@@ -25,10 +25,8 @@ func TestGetId(t *testing.T) {
 
 func TestUrl(t *testing.T) {
 	mux := http.NewServeMux()
-	h := &Handler{
-		runs: run.New(30 * time.Second),
-		root: "/user",
-	}
+	h := NewHandler(run.New(30*time.Second), "/user",
+		func(r *run.Run, req *http.Request, arg map[string]interface{}) {})
 	r := h.runs.NewRun(context.TODO())
 	mux.Handle("/user/", h)
 	server := httptest.NewServer(mux)
