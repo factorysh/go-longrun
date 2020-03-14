@@ -37,5 +37,7 @@ func TestEvents(t *testing.T) {
 	})
 	wait.Wait()
 	evts.Close()
+	evts.block.RLock()
+	defer evts.block.RUnlock()
 	assert.Len(t, evts.broadcast, 0)
 }
