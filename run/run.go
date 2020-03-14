@@ -17,27 +17,40 @@ type Run struct {
 func (r *Run) append(evt *Event) {
 	j, _ := json.Marshal(evt.Value)
 	r.Events.Append(&sse.Event{
-		Data:  string(j),
-		Event: string(evt.State),
+		Data:   string(j),
+		Event:  string(evt.State),
+		Ending: evt.Ended(),
 	})
 }
 
 func (r *Run) Run(value interface{}) {
-	r.append(&Event{RUNNING, value})
+	r.append(&Event{
+		State: RUNNING,
+		Value: value,
+	})
 }
 
 func (r *Run) Cancel() {
-	r.append(&Event{CANCELED, nil})
+	r.append(&Event{
+		State: CANCELED,
+		Value: nil,
+	})
 	r.Events.Close()
 }
 
 func (r *Run) Error(err error) {
-	r.append(&Event{ERROR, err.Error()})
+	r.append(&Event{
+		State: ERROR,
+		Value: err.Error(),
+	})
 	r.Events.Close()
 }
 
 func (r *Run) Success(value interface{}) {
-	r.append(&Event{SUCCESS, value})
+	r.append(&Event{
+		State: SUCCESS,
+		Value: value,
+	})
 	r.Events.Close()
 }
 

@@ -18,8 +18,17 @@ import (
 )
 
 type Handler struct {
-	runs *run.Runs
-	root string
+	runs   *run.Runs
+	root   string
+	action func(r *run.Run, req *http.Request, arg map[string]interface{})
+}
+
+func NewHandler(runs *run.Runs, root string, action func(r *run.Run, req *http.Request, arg map[string]interface{})) *Handler {
+	return &Handler{
+		runs:   runs,
+		root:   root,
+		action: action,
+	}
 }
 
 func getId(root, path string) (uuid.UUID, error) {
@@ -65,18 +74,21 @@ func (h *Handler) post(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 	b, err := ioutil.ReadAll(req.Body)
+	defer req.Body.Close()
 	if err != nil {
 		fmt.Println(err)
 		resp.WriteHeader(400)
+		return
 	}
-	req.Body.Close()
-	raw := new(json.RawMessage)
-	err = json.Unmarshal(b, raw)
+	var arg map[string]interface{}
+	err = json.Unmarshal(b, &arg)
 	if err != nil {
 		fmt.Println(err)
 		resp.WriteHeader(500)
+		return
 	}
-	run := h.runs.New()
+	ctx := context.TODO()
+	run := h.runs.NewRun(ctx)
 	resp.Header().Set("content-type", "application/json")
 	r := bytes.NewBufferString(`{"id":"`)
 	r.WriteString(run.Id().String())
@@ -90,6 +102,8 @@ func (h *Handler) post(resp http.ResponseWriter, req *http.Request) {
 		resp.WriteHeader(201)
 		resp.Write(r.Bytes())
 	}
+
+	go h.action(run, req, arg)
 }
 
 func (h *Handler) get(l *log.Entry, resp http.ResponseWriter, req *http.Request) {
@@ -123,7 +137,7 @@ func (h *Handler) get(l *log.Entry, resp http.ResponseWriter, req *http.Request)
 	if parseAcceptContains(req.Header.Get("accept"), "text/event-stream") {
 		ctx, cancel := context.WithCancel(context.TODO())
 		defer cancel()
-		go sse.HandleSSE(ctx, run.Events, resp, l, since)
+		sse.HandleSSE(ctx, run.Events, resp, l, since)
 	} else {
 		events, err := run.Since(since)
 		if err != nil {

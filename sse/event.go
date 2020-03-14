@@ -13,6 +13,7 @@ type Event struct {
 	Id         string
 	Event      string
 	Retry      time.Duration
+	Ending     bool
 }
 
 func (e *Event) Write(w io.Writer) {
