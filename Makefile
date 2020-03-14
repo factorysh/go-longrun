@@ -1,13 +1,6 @@
-build: bin
-	go build -o bin/longrun .
-
-bin:
-	mkdir -p bin
 
 test:
-	go test -v github.com/factorysh/go-longrun/longrun
-	go test -v github.com/factorysh/go-longrun/longrun/sse
-	go test -v github.com/factorysh/go-longrun/run
-
-clean:
-	rm -rf bin
+	go test -v github.com/factorysh/go-longrun/sse \
+	github.com/factorysh/go-longrun/run \
+	github.com/factorysh/go-longrun/rest \
+	github.com/factorysh/go-longrun/client

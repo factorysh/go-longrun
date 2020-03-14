@@ -3,7 +3,6 @@ module github.com/factorysh/go-longrun
 go 1.14
 
 require (
-	github.com/bitwurx/jrpc2 v0.0.0-20190318145642-4f6f5c5d6ee3
 	github.com/google/uuid v1.1.1
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
