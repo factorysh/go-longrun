@@ -30,7 +30,7 @@ func (e *Event) Write(w io.Writer) error {
 		}
 	}
 	if e.Retry != 0 {
-		_, err := fmt.Fprintf(w, "retry: %d\n", e.Retry)
+		_, err := fmt.Fprintf(w, "retry: %d\n", e.Retry/time.Millisecond)
 		if err != nil {
 			return err
 		}
