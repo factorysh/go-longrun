@@ -8,6 +8,6 @@ require (
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/sirupsen/logrus v1.4.1
 	github.com/stretchr/testify v1.4.0
-	golang.org/x/sys v0.0.0-20190428183149-804c0c7841b5 // indirect
+	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )
