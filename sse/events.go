@@ -16,7 +16,6 @@ type Events struct {
 type subscriber struct {
 	events chan *Event
 	ctx    context.Context
-	done   chan interface{}
 }
 
 func NewEvents() *Events {
@@ -42,28 +41,24 @@ func (e *Events) Since(since int) []*Event {
 func (e *Events) Subscribe(ctx context.Context, since int) chan *Event {
 	s := &subscriber{
 		events: make(chan *Event, 100),
-		done:   make(chan interface{}),
 		ctx:    ctx,
 	}
+	bid := e.nextBid()
+	e.block.Lock()
+	e.broadcast[bid] = s
+	e.block.Unlock()
+	e.lock.RLock()
+	for i := since; i < len(e.events); i++ {
+		s.events <- e.events[i]
+	}
+	e.lock.RUnlock()
 	go func() {
-		bid := e.nextBid()
+		select {
+		case <-ctx.Done():
+		}
 		e.block.Lock()
-		e.broadcast[bid] = s
+		delete(e.broadcast, bid)
 		e.block.Unlock()
-		e.lock.RLock()
-		for i := since; i < len(e.events); i++ {
-			s.events <- e.events[i]
-		}
-		e.lock.RUnlock()
-		for {
-			select {
-			case <-ctx.Done():
-			case <-s.done:
-			}
-			e.block.Lock()
-			delete(e.broadcast, bid)
-			e.block.Unlock()
-		}
 	}()
 	return s.events
 }
@@ -80,11 +75,12 @@ func (e *Events) Append(evt *Event) {
 }
 
 func (e *Events) Close() {
-	e.block.RLock()
-	defer e.block.RUnlock()
-	for _, s := range e.broadcast {
-		s.done <- new(interface{})
+	e.block.Lock()
+	for k, s := range e.broadcast {
+		close(s.events)
+		delete(e.broadcast, k)
 	}
+	e.block.Unlock()
 }
 
 func (e *Events) Size() int {

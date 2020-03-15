@@ -27,6 +27,7 @@ func TestEvents(t *testing.T) {
 				}
 			}
 			wait.Done()
+			fmt.Println("Waiting done")
 		}(i)
 	}
 	evts.Append(&Event{
@@ -35,7 +36,9 @@ func TestEvents(t *testing.T) {
 	evts.Append(&Event{
 		Data: "Pam",
 	})
+	fmt.Println("Waiting")
 	wait.Wait()
+	fmt.Println("Stop waiting")
 	evts.Close()
 	evts.block.RLock()
 	defer evts.block.RUnlock()
