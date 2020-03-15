@@ -16,18 +16,31 @@ type Event struct {
 	Ending     bool
 }
 
-func (e *Event) Write(w io.Writer) {
+func (e *Event) Write(w io.Writer) error {
 	if e.Id != "" {
-		fmt.Fprintf(w, "id: %s\n", e.Id)
+		_, err := fmt.Fprintf(w, "id: %s\n", e.Id)
+		if err != nil {
+			return err
+		}
 	}
 	if e.Event != "" {
-		fmt.Fprintf(w, "event: %s\n", e.Event)
+		_, err := fmt.Fprintf(w, "event: %s\n", e.Event)
+		if err != nil {
+			return err
+		}
 	}
 	if e.Retry != 0 {
-		fmt.Fprintf(w, "retry: %d\n", e.Retry)
+		_, err := fmt.Fprintf(w, "retry: %d\n", e.Retry)
+		if err != nil {
+			return err
+		}
 	}
 	for _, data := range strings.Split(e.Data, "\n") {
-		fmt.Fprintf(w, "data: %s\n", data)
+		_, err := fmt.Fprintf(w, "data: %s\n", data)
+		if err != nil {
+			return err
+		}
 	}
-	w.Write([]byte("\n"))
+	_, err := w.Write([]byte("\n"))
+	return err
 }

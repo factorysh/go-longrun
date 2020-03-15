@@ -43,4 +43,6 @@ func TestEvents(t *testing.T) {
 	evts.block.RLock()
 	defer evts.block.RUnlock()
 	assert.Len(t, evts.broadcast, 0)
+	assert.Equal(t, 2, evts.Size())
+	assert.Len(t, evts.Since(0), 2)
 }
