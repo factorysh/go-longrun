@@ -38,33 +38,6 @@ func (s *SSEReader) Read() (*Event, error) {
 	return nil, io.EOF
 }
 
-// DEPRECATED
-func Reader(r io.Reader, visitor func(*Event) error) error {
-	scanner := bufio.NewScanner(r)
-	evt := &Event{}
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" {
-			err := visitor(evt)
-			if err != nil {
-				return err
-			}
-			evt = &Event{}
-		}
-		if strings.HasPrefix(line, ":") {
-			continue
-		}
-		parts := strings.SplitN(line, ":", 2)
-		switch len(parts) {
-		case 1:
-			event(evt, parts[0], "")
-		case 2:
-			event(evt, parts[0], parts[1][:len(parts[1])])
-		}
-	}
-	return scanner.Err()
-}
-
 func event(evt *Event, key, value string) {
 	if strings.HasPrefix(value, " ") {
 		value = value[1:]
