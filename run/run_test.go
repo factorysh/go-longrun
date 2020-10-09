@@ -1,60 +1,39 @@
 package run
 
 import (
-	"encoding/json"
-	"fmt"
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSubscribe(t *testing.T) {
-	runs := New(time.Hour)
-	run := runs.New()
-	c := run.Subscribe(0)
-	go func() {
-		for {
-			evt := <-c
-			fmt.Println(evt)
-		}
-	}()
-
-	time.Sleep(5 * time.Second)
-	run.Run("hop")
-	run.Run("pim")
-	run.Run("pam")
-	run.Run("poum")
-	time.Sleep(2 * time.Second)
-	run.Cancel()
-}
-
 func TestRun(t *testing.T) {
 	runs := New(time.Hour)
-	run := runs.New()
+	ctx := context.TODO()
+	run := runs.NewRun(ctx)
 	go func() {
-		time.Sleep(5 * time.Second)
+		time.Sleep(500 * time.Millisecond)
 		run.Run("hop")
 		run.Run("pim")
 		run.Run("pam")
 		run.Run("poum")
-		time.Sleep(2 * time.Second)
+		time.Sleep(200 * time.Millisecond)
 		run.Cancel()
 	}()
 	i := 0
 	for {
-		evts, err := runs.Get(run.id, i)
-		assert.NoError(t, err)
-		i += len(evts)
-		stop := false
-		for _, evt := range evts {
-			j, err := json.Marshal(evt)
-			assert.NoError(t, err)
-			fmt.Println(i, string(j))
-			stop = stop || evt.Ended()
+		r, ok := runs.GetRun(run.id)
+		assert.True(t, ok)
+		evts, err := r.Since(i)
+		if len(evts) == 0 {
+			continue
 		}
-		if stop {
+		i += len(evts)
+		assert.NoError(t, err)
+		if evts[len(evts)-1].Ended() {
 			break
 		}
+		time.Sleep(100 * time.Millisecond)
 	}
 }

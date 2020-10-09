@@ -2,33 +2,27 @@ package sse
 
 import (
 	"bufio"
-	"encoding/json"
+	"fmt"
 	"io"
+	"strconv"
 	"strings"
+	"time"
 )
 
-type Event struct {
-	Data  string
-	Id    string
-	Event string
-	Retry string
+type SSEReader struct {
+	scanner *bufio.Scanner
 }
 
-func (e *Event) JSON(v interface{}) error {
-	return json.Unmarshal([]byte(e.Data), v)
+func NewSSEReader(r io.Reader) *SSEReader {
+	return &SSEReader{bufio.NewScanner(r)}
 }
 
-func Reader(r io.Reader, visitor func(*Event) error) error {
-	scanner := bufio.NewScanner(r)
+func (s *SSEReader) Read() (*Event, error) {
 	evt := &Event{}
-	for scanner.Scan() {
-		line := scanner.Text()
+	for s.scanner.Scan() {
+		line := s.scanner.Text()
 		if line == "" {
-			err := visitor(evt)
-			if err != nil {
-				return err
-			}
-			evt = &Event{}
+			return evt, nil
 		}
 		if strings.HasPrefix(line, ":") {
 			continue
@@ -41,7 +35,7 @@ func Reader(r io.Reader, visitor func(*Event) error) error {
 			event(evt, parts[0], parts[1][:len(parts[1])])
 		}
 	}
-	return scanner.Err()
+	return nil, io.EOF
 }
 
 func event(evt *Event, key, value string) {
@@ -55,10 +49,19 @@ func event(evt *Event, key, value string) {
 	case "id":
 		evt.Id = value
 	case "retry":
-		evt.Retry = value
+		retry, err := strconv.Atoi(value)
+		if err == nil {
+			// like Mozilla, we doesn't throw an error
+			evt.Retry = time.Duration(retry) * time.Millisecond
+		}
 	case "event":
 		evt.Event = value
 	case "data":
-		evt.Data = evt.Data + value
+		if evt.dataExists {
+			evt.Data = fmt.Sprintf("%s\n%s", evt.Data, value)
+		} else {
+			evt.Data = value
+			evt.dataExists = true
+		}
 	}
 }
